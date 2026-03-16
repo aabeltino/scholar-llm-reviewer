@@ -192,3 +192,5 @@ pip install -r requirements.txt
 ---
 
 *This setup provides a semi-automated pipeline to collect, evaluate, and select academic papers for structured literature reviews — combining Selenium-based web scraping with LLM-powered classification.*
+
+![fub_logo](images/logo_fub.jpeg)
