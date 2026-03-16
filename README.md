@@ -12,7 +12,7 @@
 
 ## How It Works
 
-![Pipeline Overview](image/graphical_representation.jpg)
+![Pipeline Overview](images/graphical_representation.jpg)
 *Fig. 1 — Full pipeline: from search query to curated literature*
 
 ```
