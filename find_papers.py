@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def scrape_scholar(query: str, output_filename: str) -> pd.DataFrame:
+def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = True, sort_by_date: bool = True) -> pd.DataFrame:
     """
     Scrape Google Scholar search results for a given query and save them to Excel.
 
@@ -17,9 +17,11 @@ def scrape_scholar(query: str, output_filename: str) -> pd.DataFrame:
     'quit' or when the last results page is reached.
 
     Args:
-        query (str):           Boolean search query to submit to Google Scholar.
-        output_filename (str): Name of the output Excel file (e.g. 'papers.xlsx').
-                               The file is saved inside the data/ folder.
+        query (str):                Boolean search query to submit to Google Scholar.
+        output_filename (str):      Name of the output Excel file (e.g. 'papers.xlsx').
+                                    The file is saved inside the data/ folder.
+        filter_scholarly (bool):    Whether to filter results to scholarly articles (default True).
+        sort_by_date (bool):        Whether to sort results by date (default True).
 
     Returns:
         pd.DataFrame: DataFrame containing the scraped papers with columns:
@@ -42,6 +44,17 @@ def scrape_scholar(query: str, output_filename: str) -> pd.DataFrame:
     wait.until(EC.element_to_be_clickable((By.ID, "gs_hdr_tsi"))).send_keys(query)
     wait.until(EC.element_to_be_clickable((By.ID, "gs_hdr_tsb"))).click()
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.gs_r.gs_or.gs_scl")))
+
+    if filter_scholarly:
+        # Click on the "Scholarly articles" link in a language-independent way
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.gs_ind > a[href*='as_rr=1']"))).click()
+        # Wait for the updated search results
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.gs_r.gs_or.gs_scl")))
+    if sort_by_date:
+        # Click on the "Sort by date" link in a language-independent way
+        wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.gs_ind > a[href*='scisbd=1']"))).click()
+        # Wait for the results sorted by date
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.gs_r.gs_or.gs_scl")))
 
     # ---------------------------------------------------------------------------
     # RESULTS COLLECTION
