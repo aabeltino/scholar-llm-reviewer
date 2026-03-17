@@ -4,29 +4,44 @@ import lmstudio as lms
 from llm_models import auto_select_llm_model
 
 
-def select_papers(input_filename: str, output_filename: str, prompt_template: str) -> pd.DataFrame:
+def select_papers(input_filename: str, output_filename: str, prompt_template: str, temperature: float = 0.7) -> pd.DataFrame:
     """
-    Classify academic papers from an Excel file using a local LLM via LMStudio.
+    Classify academic papers from an Excel dataset using a local Large Language Model (LLM) via LM Studio.
 
-    Each paper is evaluated against a taxonomy defined in the prompt template.
-    The LLM returns a structured JSON decision for each article, which is then
-    aggregated and exported to Excel.
+    Each paper is evaluated against a taxonomy defined in the provided prompt template.
+    The model returns a structured JSON decision for each paper (e.g., inclusion, category, and justification),
+    which is then parsed, aggregated, and exported to an output Excel file.
 
-    A fresh chat session is created for every paper to prevent context contamination
-    from previous responses (hallucination carry-over).
+    To ensure independence across evaluations and prevent context contamination
+    (i.e., hallucination carry-over), a new chat session is initialized for each paper.
 
     Args:
-        input_filename (str):   Name of the Excel file to read from the data/ folder
-                                (e.g. 'papers_review_ontology.xlsx'). Must contain
-                                columns: 'Title', 'Authors', 'Snippet'.
-        output_filename (str):  Name of the output Excel file saved in the output/ folder
-                                (e.g. 'review_ontology_results.xlsx').
-        prompt_template (str):  Prompt sent to the LLM for each paper. Must contain
-                                three placeholders: {title}, {authors}, {snippet}.
+        input_filename (str):
+            Name of the Excel file located in the `data/` directory
+            (e.g., 'papers_review_ontology.xlsx'). The file must include
+            the following columns: 'Title', 'Authors', 'Snippet'.
+
+        output_filename (str):
+            Name of the output Excel file to be saved in the `output/` directory
+            (e.g., 'review_ontology_results.xlsx').
+
+        prompt_template (str):
+            Prompt template used to query the LLM. It must include the placeholders
+            {title}, {authors}, and {snippet}, which will be dynamically filled
+            with each paper’s metadata.
+
+        temperature (float, optional):
+            Sampling temperature controlling the randomness of the model’s output.
+            Lower values (e.g., 0.0–0.3) yield more deterministic and consistent results,
+            while higher values increase variability. Default is 0.7.
 
     Returns:
-        pd.DataFrame: DataFrame with columns ['Title', 'Include', 'Category', 'Reason']
-                      representing the LLM's classification for each paper.
+        pd.DataFrame:
+            A DataFrame containing the classification results with the following columns:
+            - 'Title'    : Title of the paper
+            - 'Include'  : Boolean indicating inclusion/exclusion decision
+            - 'Category' : Assigned taxonomy category (or 'PARSE_ERROR' if parsing fails)
+            - 'Reason'   : Model-generated explanation supporting the decision
     """
 
     # ---------------------------------------------------------------------------
@@ -65,8 +80,11 @@ def select_papers(input_filename: str, output_filename: str, prompt_template: st
         chat = lms.Chat()
         chat.add_user_message(prompt)
 
+        # Define the model configuration
+        config = {'temperature': temperature}
+
         # Stream the model's response token-by-token and print it in real time.
-        stream        = model.respond_stream(chat)
+        stream        = model.respond_stream(chat, config=config)
         full_response = ""
 
         print("\nModel response:\n")
@@ -121,41 +139,3 @@ def select_papers(input_filename: str, output_filename: str, prompt_template: st
     print(f"  Total              : {len(output)}")
 
     return output
-
-
-# ---------------------------------------------------------------------------
-# EXAMPLE USAGE
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-
-    prompt_template = """
-You assist a literature review about raw material value chain analysis using
-knowledge graphs, digital twins, centrality measures, and stress testing.
-
-Taxonomy categories:
-  1. Domain Ontology & Knowledge Graph Implementation
-  2. Structural Analysis & Centrality Measures
-  3. Supply Chain Digital Twin & Simulation
-  4. Stress Testing & Resilience Analysis
-
-Evaluate the following paper in the context of this review.
-
-Title:   {title}
-Authors: {authors}
-Snippet: {snippet}
-
-Return ONLY a JSON object — no preamble, no explanation, no markdown:
-
-{{
-  "include":  true or false,
-  "category": "",
-  "reason":   ""
-}}
-"""
-
-    df = select_papers(
-        input_filename="papers_review_ontology.xlsx",
-        output_filename="review_ontology_results.xlsx",
-        prompt_template=prompt_template,
-    )
