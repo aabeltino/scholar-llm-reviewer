@@ -8,7 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = True, sort_by_date: bool = True) -> pd.DataFrame:
+def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = True, sort_by_date: bool = True, year_from: str = None,
+    year_to: str = None) -> pd.DataFrame:
     """
     Scrape Google Scholar search results for a given query and save them to Excel.
 
@@ -17,11 +18,12 @@ def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = Tr
     'quit' or when the last results page is reached.
 
     Args:
-        query (str):                Boolean search query to submit to Google Scholar.
-        output_filename (str):      Name of the output Excel file (e.g. 'papers.xlsx').
-                                    The file is saved inside the data/ folder.
-        filter_scholarly (bool):    Whether to filter results to scholarly articles (default True).
-        sort_by_date (bool):        Whether to sort results by date (default True).
+        query (str):           Boolean search query to submit to Google Scholar.
+        output_filename (str): Name of the output Excel file (e.g. 'papers.xlsx').
+        filter_scholarly (bool): Whether to filter results to scholarly articles.
+        sort_by_date (bool):     Whether to sort results by date.
+        year_from (str):         Optional start year for custom date range.
+        year_to (str):           Optional end year for custom date range.
 
     Returns:
         pd.DataFrame: DataFrame containing the scraped papers with columns:
@@ -55,6 +57,13 @@ def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = Tr
         wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "li.gs_ind > a[href*='scisbd=1']"))).click()
         # Wait for the results sorted by date
         wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.gs_r.gs_or.gs_scl")))
+
+    # ---------------------------------------------------------------------------
+    # CUSTOM YEAR FILTER
+    # ---------------------------------------------------------------------------
+
+    if year_from and year_to:
+        date_filter(wait, driver, year_from, year_to)
 
     # ---------------------------------------------------------------------------
     # RESULTS COLLECTION
@@ -150,3 +159,51 @@ def scrape_scholar(query: str, output_filename: str, filter_scholarly: bool = Tr
     driver.quit()
 
     return df
+
+def date_filter(wait, driver, start_year, end_year):
+    """
+    Fill the custom year range form on Google Scholar and submit it safely.
+
+    Args:
+        wait (WebDriverWait): Selenium WebDriverWait instance for waiting on elements.
+        driver (WebDriver): Selenium WebDriver instance.
+        start_year (str): Starting year for the custom range (e.g., "2015").
+        end_year (str): Ending year for the custom range (e.g., "2023").
+    """
+
+    # Click "Intervallo personalizzato..."
+    wait.until(EC.element_to_be_clickable((By.ID, "gs_res_sb_yyc"))).click()
+
+    # Wait for the custom date range form to be present in the DOM
+    wait.until(EC.presence_of_element_located((By.ID, "gs_res_sb_yyf")))
+    form = driver.find_element(By.ID, "gs_res_sb_yyf")
+
+    # ---------------------------------------------------------------------------
+    # ENTER START YEAR
+    # ---------------------------------------------------------------------------
+    # Wait until the "from" year input is visible
+    ylo_input = wait.until(EC.visibility_of(form.find_element(By.ID, "gs_as_ylo")))
+    # Clear any existing value in the input
+    ylo_input.clear()
+    # Enter the desired starting year
+    ylo_input.send_keys(start_year)
+
+    # ---------------------------------------------------------------------------
+    # ENTER END YEAR
+    # ---------------------------------------------------------------------------
+    # Wait until the "to" year input is visible
+    yhi_input = wait.until(EC.visibility_of(form.find_element(By.NAME, "as_yhi")))
+    # Clear any existing value in the input
+    yhi_input.clear()
+    # Enter the desired ending year
+    yhi_input.send_keys(end_year)
+
+    # ---------------------------------------------------------------------------
+    # SUBMIT FORM
+    # ---------------------------------------------------------------------------
+    # Submit the form directly instead of clicking the button
+    # This avoids issues with dynamic buttons or hidden elements
+    form.submit()
+
+    # Wait for the search results to be fully loaded after applying the year filter
+    wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.gs_r.gs_or.gs_scl")))
