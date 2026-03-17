@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # Step 1 — Scrape Google Scholar and save raw article data to data/
     print("\n=== STEP 1: Scraping Google Scholar ===\n")
-    scrape_scholar(query=query, output_filename=RAW_DATA_FILE)
+    scrape_scholar(query=query, output_filename=RAW_DATA_FILE, year_to='2022', year_from='2026', sort_by_date=False)
 
     # Step 2 — Classify each article with the LLM and save results to output/
     print("\n=== STEP 2: Classifying papers with LLM ===\n")
