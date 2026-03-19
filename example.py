@@ -27,28 +27,28 @@ query = """(
 # for each paper by select_papers().
 # ---------------------------------------------------------------------------
 
-prompt_template = """
-You assist a literature review about raw material value chain analysis using
-knowledge graphs, digital twins, centrality measures, and stress testing.
+PROMPT_TEMPLATE = """
+You are assisting with a literature review on raw material value chain analysis
+using knowledge graphs, digital twins, centrality measures, and stress testing.
 
 Taxonomy categories:
-  1. Domain Ontology & Knowledge Graph Implementation
-  2. Structural Analysis & Centrality Measures
-  3. Supply Chain Digital Twin & Simulation
-  4. Stress Testing & Resilience Analysis
+1. Domain Ontology & Knowledge Graph Implementation
+2. Structural Analysis & Centrality Measures
+3. Supply Chain Digital Twin & Simulation
+4. Stress Testing & Resilience Analysis
 
-Evaluate the following paper in the context of this review.
+Evaluate the following paper within this context:
 
 Title:   {title}
 Authors: {authors}
 Snippet: {snippet}
 
-Return ONLY a JSON object — no preamble, no explanation, no markdown:
+Return ONLY a valid JSON object (no explanations, no markdown):
 
 {{
-  "include":  true or false,
+  "include": true or false,
   "category": "",
-  "reason":   ""
+  "reason": ""
 }}
 """
 
